@@ -33,6 +33,14 @@ import (
 	"github.com/kardianos/osext"
 )
 
+
+const (
+	// SPAWNTIME is an environmental variable that your application may use to count spawn depth.
+	// SPAWNTIME of 1 means first spawn, SPAWNTIME=2 means was spawned from a spawn, etc
+	SPAWNTIME = "SPAWNTIME"
+)
+
+
 // Exe is exported only for convenience
 func Exe() (self string, dir string, args []string) {
 	self, _ = osext.Executable()
