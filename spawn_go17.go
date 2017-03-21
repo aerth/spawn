@@ -20,40 +20,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Package spawn a process like a salmon
+// +build go1.7
+
 package spawn
 
 import (
 	"os"
-	"os/exec"
-	"strconv"
 )
 
-const (
-	// SPAWNTIME is an environmental variable that your application may use to count spawn depth.
-	// SPAWNTIME of 1 means first spawn, SPAWNTIME=2 means was spawned from a spawn, etc
-	SPAWNTIME = "SPAWNTIME"
-)
-
-// Spawn better than a salmon!
-func Spawn() error {
-
-	// Increment SPAWNTIME count
-	i, _ := strconv.Atoi(os.Getenv(SPAWNTIME))
-	i++
-	os.Setenv(SPAWNTIME, strconv.Itoa(i))
-
-	// Spawned process has new environmental variable: SPAWNED=true
-	os.Setenv("SPAWNED", "true")
-	me, medir, args := Exe()
-
-	cmd := exec.Command(me, args...)
-	cmd.Dir = medir
-
-	return cmd.Start()
-}
-
-// Destroy is the same as os.Exit(0) for now.
-func Destroy() {
-	os.Exit(0)
+// Exe returns information about the current running process.
+func Exe() (self string, dir string, args []string) {
+	self, _ = os.Executable()
+	dir, _ = os.Getwd()
+	if len(os.Args) > 1 {
+		args = os.Args[1:]
+	}
+	return self, dir, args
 }

@@ -17,8 +17,5 @@ as seen in:
 
 ```
 import "github.com/aerth/spawn"
-
 spawn.Spawn()
-os.Exit(0)
-
 ```
