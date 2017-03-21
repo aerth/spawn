@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// +build go1.7
+// +build !go1.7
 
 // Package spawn a process like a salmon
 package spawn
@@ -29,30 +29,35 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+
+	"github.com/kardianos/osext"
 )
 
-const (
-	// SPAWNTIME is an environmental variable that your application may use to count spawn depth.
-	// SPAWNTIME of 1 means first spawn, SPAWNTIME=2 means was spawned from a spawn, etc
-	SPAWNTIME = "SPAWNTIME"
-)
+// Exe is exported only for convenience
+func Exe() (self string, dir string, args []string) {
+	self, _ = osext.Executable()
+	dir, _ = osext.ExecutableFolder()
+	if len(os.Args) > 1 {
+		args = os.Args[1:]
+	}
+	return self, dir, args
+}
 
 // Spawn better than a salmon!
 func Spawn() error {
 
-	// Count increment (new process gets only some of our env)
+	// Count increment (new process gets our env)
 	i, _ := strconv.Atoi(os.Getenv(SPAWNTIME))
 	i++
 	os.Setenv(SPAWNTIME, strconv.Itoa(i))
 
 	// Spawned process has new environmental variable: SPAWNED=true
 	os.Setenv("SPAWNED", "true")
+
 	me, medir, args := Exe()
 
 	cmd := exec.Command(me, args...)
-
 	cmd.Dir = medir
-
 	return cmd.Start()
 }
 
@@ -94,15 +99,4 @@ func execute(cd string, cmd ...string) (output string, ok bool) {
 func Destroy() {
 	//runtime.Gosched()
 	os.Exit(0)
-}
-
-
-// Exe is exported only for convenience
-func Exe() (self string, dir string, args []string) {
-	self, _ = os.Executable()
-	dir, _ = os.Getwd()
-	if len(os.Args) > 1 {
-		args = os.Args[1:]
-	}
-	return self, dir, args
 }
