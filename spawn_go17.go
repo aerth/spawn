@@ -20,18 +20,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// +build go1.7
+// +build !go1.8
 
 package spawn
 
 import (
 	"os"
+
+	"github.com/kardianos/osext"
 )
 
 // Exe returns information about the current running process.
 func Exe() (self string, dir string, args []string) {
-	self, _ = os.Executable()
-	dir, _ = os.Getwd()
+	self, _ = osext.Executable()
+	dir, _ = osext.ExecutableFolder()
 	if len(os.Args) > 1 {
 		args = os.Args[1:]
 	}
