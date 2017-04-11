@@ -4,6 +4,8 @@
 
 spawn the current process
 
+[![Build Status](https://travis-ci.org/aerth/spawn.svg?branch=master)](https://travis-ci.org/aerth/spawn)
+
 as seen in:
 
   * server daemons
