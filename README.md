@@ -15,7 +15,11 @@ as seen in:
   * go routines
   * main function
 
+
 ```
 import "github.com/aerth/spawn"
-spawn.Spawn()
+if os.Getenv("SPAWN") == "" {
+  spawn.Spawn()
+  spawn.Destroy()
+}
 ```
