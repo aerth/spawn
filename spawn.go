@@ -33,23 +33,33 @@ const (
 	// SPAWNTIME is an environmental variable that your application may use to count spawn depth.
 	// SPAWNTIME of 1 means first spawn, SPAWNTIME=2 means was spawned from a spawn, etc
 	SPAWNTIME = "SPAWNTIME"
+
+	// SPAWNED is an environmental variable that is set to "true" for new processes created with Spawn()
+	SPAWNED = "SPAWNED"
 )
 
 // Spawn better than a salmon!
 func Spawn() error {
-
 	// Increment SPAWNTIME count
-	i, _ := strconv.Atoi(os.Getenv(SPAWNTIME))
-	i++
-	os.Setenv(SPAWNTIME, strconv.Itoa(i))
+	// (we dont care about errors, because it returns 0 if empty)
+	origSpawntime := os.Getenv(SPAWNTIME)
+	spawntime, _ := strconv.Atoi(origSpawntime)
 
 	// Spawned process has new environmental variable: SPAWNED=true
-	os.Setenv("SPAWNED", "true")
+	prev := os.Getenv(SPAWNED)
+	os.Setenv(SPAWNED, "true")
+	os.Setenv(SPAWNTIME, strconv.Itoa(spawntime+1))
 	me, medir, args := Exe()
-
+	// fmt.Println("spawning:", me, medir, args)
 	cmd := exec.Command(me, args...)
 	cmd.Dir = medir
-
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	cmd.Env = os.Environ()
+	// reset current processes SPAWN variables
+	os.Setenv(SPAWNED, prev)
+	os.Setenv(SPAWNTIME, origSpawntime)
 	return cmd.Start()
 }
 

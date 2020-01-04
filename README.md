@@ -18,9 +18,12 @@ as seen in:
   * main function
 
 
+
+### Usage
+
 ```
 import "github.com/aerth/spawn"
-if os.Getenv("SPAWN") == "" {
+if os.Getenv(spawn.SPAWNED) == "" {
   spawn.Spawn()
   spawn.Destroy()
 }
