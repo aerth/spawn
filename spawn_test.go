@@ -3,12 +3,14 @@ package spawn
 import (
 	"os"
 	"testing"
+	"time"
 	// "time"
 )
 
 func TestSpawn(t *testing.T) {
-	if sp := os.Getenv(SPAWNTIME); sp != "3" {
-		t.Log("spawning: current spawn", sp)
+	if sp := os.Getenv(SPAWNED_ENV); sp != "10" {
+		t.Logf("spawning: current spawn #%s", sp)
+		<-time.After(time.Second)
 		if err := Spawn(); err != nil {
 			t.Error(err)
 			return

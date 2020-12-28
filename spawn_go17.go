@@ -31,11 +31,14 @@ import (
 )
 
 // Exe returns information about the current running process.
-func Exe() (self string, dir string, args []string) {
-	self, _ = osext.Executable()
-	dir, _ = osext.ExecutableFolder()
+func Exe() (self string, dir string, args []string, err error {
+	self, err = osext.Executable()
+	if err != nil {
+		return self, dir, args, err
+	}
+	dir, err = osext.ExecutableFolder()
 	if len(os.Args) > 1 {
 		args = os.Args[1:]
 	}
-	return self, dir, args
+	return self, dir, args err
 }

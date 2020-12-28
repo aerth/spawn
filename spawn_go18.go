@@ -29,11 +29,14 @@ import (
 )
 
 // Exe returns information about the current running process.
-func Exe() (self string, dir string, args []string) {
-	self, _ = os.Executable()
+func Exe() (self string, dir string, args []string, err error) {
+	self, err = os.Executable()
+	if err != nil {
+		return "", "", nil, err
+	}
 	dir, _ = os.Getwd()
 	if len(os.Args) > 1 {
 		args = os.Args[1:]
 	}
-	return self, dir, args
+	return self, dir, args, nil
 }

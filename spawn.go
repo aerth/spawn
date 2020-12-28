@@ -24,42 +24,96 @@
 package spawn
 
 import (
+	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strconv"
 )
 
 const (
-	// SPAWNTIME is an environmental variable that your application may use to count spawn depth.
-	// SPAWNTIME of 1 means first spawn, SPAWNTIME=2 means was spawned from a spawn, etc
-	SPAWNTIME = "SPAWNTIME"
-
-	// SPAWNED is an environmental variable that is set to "true" for new processes created with Spawn()
-	SPAWNED = "SPAWNED"
+	// SPAWNED_ENV ("$SPAWNED") is an environmental variable that is set for new processes created with Spawn()
+	// Your application may use it to count spawn depth.
+	// SPAWNED_ENV of 1 means first spawn, SPAWNTIME=2 means was spawned from a spawn,
+	// SPAWNED_ENV=3 means this program was spawned from a spawned program that was spawned from another instance of the program.
+	SPAWNED_ENV = "SPAWNED"
 )
+
+// GetEnviron can be used, but if using Destroy() then its easier to just os.Setenv() before running Spawn() before Destroy()
+var GetEnviron func() []string = os.Environ
 
 // Spawn better than a salmon!
 func Spawn() error {
+	myproc, myworkingdir, args, err := Exe()
+	if err != nil {
+		return fmt.Errorf("couldn't find our own process: %v", err)
+	}
 	// Increment SPAWNTIME count
 	// (we dont care about errors, because it returns 0 if empty)
-	origSpawntime := os.Getenv(SPAWNTIME)
-	spawntime, _ := strconv.Atoi(origSpawntime)
-
-	// Spawned process has new environmental variable: SPAWNED=true
-	prev := os.Getenv(SPAWNED)
-	os.Setenv(SPAWNED, "true")
-	os.Setenv(SPAWNTIME, strconv.Itoa(spawntime+1))
-	me, medir, args := Exe()
+	var (
+		origSpawntime     = os.Getenv(SPAWNED_ENV)
+		spawntime     int = 0
+	)
+	if origSpawntime != "" { // spawned from a spawn
+		spawntime, err = strconv.Atoi(origSpawntime)
+		if err != nil {
+			println("this program may be using the spawn library incorrectly")
+		}
+	}
+	prev := spawntime
+	newnum := spawntime + 1
+	// Spawned process has new environmental variable: SPAWNED=1, or SPAWNED=2, or maybe even higher numbers
+	os.Setenv(SPAWNED_ENV, strconv.Itoa(newnum))
 	// fmt.Println("spawning:", me, medir, args)
-	cmd := exec.Command(me, args...)
-	cmd.Dir = medir
+	// path to myproc may not exist anymore, for example in go tests
+	_, staterr := os.Stat(myproc)
+	if staterr != nil {
+		err = fmt.Errorf("trying to stat file %q ran into error: %v", myproc, err)
+		if runtime.GOOS != "linux" { // TODO: ...
+			return err
+		}
+		mypid := os.Getpid()
+		tmpfile, err := ioutil.TempFile("", "spawned")
+		if err != nil {
+			err = fmt.Errorf("trying to stat file %q ran into error: %v", myproc, err)
+			return err
+		}
+		procfilething, err := os.Open(filepath.Join("/", "proc", strconv.Itoa(mypid), "exe"))
+		if err != nil {
+			err = fmt.Errorf("trying to stat file %q ran into error: %v", myproc, err)
+			return err
+		}
+		n, err := io.Copy(tmpfile, procfilething)
+		if err != nil {
+			err = fmt.Errorf("trying to stat file %q ran into error: %v", myproc, err)
+			return err
+		}
+		if err := tmpfile.Close(); err != nil {
+			return err
+		}
+		os.Chmod(tmpfile.Name(), 0700)
+		if n == 0 {
+			err = fmt.Errorf("trying to stat file %q ran into error: %v", myproc, err)
+			return err
+		}
+		myproc = tmpfile.Name()
+		_, staterr = os.Stat(myproc)
+		if staterr != nil {
+			staterr = fmt.Errorf("trying to stat file %q ran into error: %v", myproc, staterr)
+			return staterr
+		}
+	}
+	cmd := exec.Command(myproc, args...)
+	cmd.Dir = myworkingdir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
-	cmd.Env = os.Environ()
+	cmd.Env = GetEnviron() // copy the current (with incremented SPAWNED var)
 	// reset current processes SPAWN variables
-	os.Setenv(SPAWNED, prev)
-	os.Setenv(SPAWNTIME, origSpawntime)
+	os.Setenv(SPAWNED_ENV, strconv.Itoa(prev))
 	return cmd.Start()
 }
 
