@@ -31,7 +31,7 @@ import (
 )
 
 // Exe returns information about the current running process.
-func Exe() (self string, dir string, args []string, err error {
+func Exe() (self string, dir string, args []string, err error) {
 	self, err = osext.Executable()
 	if err != nil {
 		return self, dir, args, err
@@ -40,5 +40,5 @@ func Exe() (self string, dir string, args []string, err error {
 	if len(os.Args) > 1 {
 		args = os.Args[1:]
 	}
-	return self, dir, args err
+	return self, dir, args, err
 }
